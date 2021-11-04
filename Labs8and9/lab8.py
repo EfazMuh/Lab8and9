@@ -16,7 +16,7 @@ class Run:
         # Add the IP-address of your computer here if you run on the robot
         self.virtual_create = factory.create_virtual_create()
         self.map = lab8_map.Map("lab8_map.json")
-        self.particles = ParticleFilter(self.map,100)
+        self.particles = ParticleFilter(self.map, 500)
 
     def run(self):
         data = []
