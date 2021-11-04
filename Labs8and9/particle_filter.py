@@ -20,7 +20,7 @@ class ParticleFilter:
             y = np.random.uniform(map.bottom_left[1],map.top_right[1])
             theta = np.random.uniform(0, 2*np.pi)
             ln_p = np.log(1/num_particles)
-            while map.closest_distance([x,y],theta) == 0:
+            while map.closest_distance([x,y],theta) == 0 or map.closest_distance([x,y],theta) is None:
                 x = np.random.uniform(map.bottom_left[0],map.top_right[0])
                 y = np.random.uniform(map.bottom_left[1],map.top_right[1])
                 theta = np.random.uniform(0, 2*np.pi)
@@ -32,34 +32,46 @@ class ParticleFilter:
             dtheta = theta + np.random.normal(0,sigmaT)
             dx = x + np.random.normal(0,sigmaD)
             dy = y + np.random.normal(0,sigmaD)
-            while self.map.closest_distance([p.x + dx, p.y + dy],p.theta + dtheta) == 0:
+            close = self.map.closest_distance([p.x + dx, p.y + dy], (p.theta + dtheta) % (2 * np.pi))
+            while close is None == 0 or close == 0:
                 dtheta = theta + np.random.normal(0,sigmaT)
                 dx = x + np.random.normal(0,sigmaD)
                 dy = y + np.random.normal(0,sigmaD)
-            p.theta = p.theta + dtheta
-            p.x = p.x + dx*np.cos(p.theta)
-            p.y = p.y + dy*np.sin(p.theta)
-
+                close = self.map.closest_distance([p.x + dx, p.y + dy], (p.theta + dtheta) % (2 * np.pi))
+            # Removed the multiplication by sin and cos since we already do that to get x and y.
+            # Using sin and cos would need original velocity and would assume we're using those to update particle
+            # location when we are using the robot's movement to move the particles
+            p.theta = (p.theta + dtheta) % (2 * np.pi)
+            p.x = p.x + dx
+            p.y = p.y + dy
 
     def measure(self, sonar_reading, sigma):
         probs = []
         for p in self._particles:
-            probs.append(np.exp(p.ln_p))
+            probs.append(p.ln_p)
         p_logsum = sp.logsumexp(probs)
         weights = []
         for p in self._particles:
             #print(p.x, p.y, p.theta, sigma, sonar_reading)
-            p_sens_loc = np.log(st.norm(sonar_reading,sigma).pdf(self.map.closest_distance([p.x,p.y],p.theta)))
-            p.ln_p = p_sens_loc + p.ln_p - p_logsum
+            p_sens_loc = np.log(st.norm.pdf(sonar_reading, loc = self.map.closest_distance([p.x,p.y],p.theta), scale = sigma))
+            ln_p_prev = p.ln_p
+            # Not 100% sure if it should be addition or subtraction but seems to work
+            p.ln_p = p_sens_loc +ln_p_prev + p_logsum
             weights.append(np.exp(p.ln_p))
         print(weights)
         sumW = sum(weights)
         weights /= sumW
 
-        for p in self._particles:
-            p.ln_p = np.log(np.exp(p.ln_p)/sumW)
+        new_particles = np.random.choice(self._particles,self.num_particles,True,weights)
 
-        self._particles = np.random.choice(self._particles,self.num_particles,True,weights)
+        self._particles = []
+        psum = 0
+        # Need to create new particles since choice returns references to the same particle rather than creating new ones
+        for p in new_particles:
+            self._particles.append(Particle(p.x, p.y, p.theta, p.ln_p))
+            psum += np.exp(p.ln_p)
+        for p in self._particles:
+            p.ln_p = np.log(np.exp(p.ln_p)/psum)
 
     def estimate(self):  
         maxValue = max(self._particles, key=lambda x: x.ln_p)

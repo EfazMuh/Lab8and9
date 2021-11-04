@@ -44,15 +44,15 @@ class Run:
                 self.time.sleep(.5)
                 self.create.drive_direct(0,0)
                 self.particles.move_by(.05,0,0,.01,.01)
-                dist = self.sonar.get_distance()
-                if dist is not None:
-                    self.particles.measure(dist,.1)
             elif b == self.virtual_create.Button.TurnLeft:
                 print("Turn Left pressed!")
             elif b == self.virtual_create.Button.TurnRight:
                 print("Turn Right pressed!")
             elif b == self.virtual_create.Button.Sense:
                 print("Sense pressed!")
+                dist = self.sonar.get_distance()
+                if dist is not None:
+                    self.particles.measure(dist,.1)
             for p in self.particles._particles:
                 data.append(p.x)
                 data.append(p.y)
