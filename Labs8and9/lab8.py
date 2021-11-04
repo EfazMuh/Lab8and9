@@ -14,7 +14,7 @@ class Run:
         self.servo = factory.create_servo()
         self.sonar = factory.create_sonar()
         # Add the IP-address of your computer here if you run on the robot
-        self.virtual_create = factory.create_virtual_create()
+        self.virtual_create = factory.create_virtual_create("192.168.1.118")
         self.map = lab8_map.Map("lab8_map.json")
         self.particles = ParticleFilter(self.map, 500)
 
@@ -30,11 +30,19 @@ class Run:
                 self.create.drive_direct(100,100)
                 self.time.sleep(.5)
                 self.create.drive_direct(0,0)
-                self.particles.move_by(.05,0,0,.01,.01)
+                self.particles.move_by(.1,0,0,.01,.01)
             elif b == self.virtual_create.Button.TurnLeft:
                 print("Turn Left pressed!")
+                self.create.drive_direct(100,-100)
+                self.time.sleep(1.85)
+                self.create.drive_direct(0,0)
+                self.particles.move_by(0,0,math.pi/2,.01,.01)
             elif b == self.virtual_create.Button.TurnRight:
                 print("Turn Right pressed!")
+                self.create.drive_direct(-100,100)
+                self.time.sleep(1.85)
+                self.create.drive_direct(0,0)
+                self.particles.move_by(0,0,-math.pi/2,.01,.01)
             elif b == self.virtual_create.Button.Sense:
                 print("Sense pressed!")
                 dist = self.sonar.get_distance()

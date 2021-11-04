@@ -20,7 +20,7 @@ class ParticleFilter:
             y = np.random.uniform(map.bottom_left[1],map.top_right[1])
             theta = np.random.uniform(0, 2*np.pi)
             ln_p = np.log(1/num_particles)
-            while map.closest_distance([x,y],theta) == 0 or map.closest_distance([x,y],theta) is None:
+            while map.closest_distance([x,y],theta) == 0 or map.closest_distance([x,y],theta) is None or map.closest_distance([x,y],theta) < 1.4:
                 x = np.random.uniform(map.bottom_left[0],map.top_right[0])
                 y = np.random.uniform(map.bottom_left[1],map.top_right[1])
                 theta = np.random.uniform(0, 2*np.pi)
@@ -30,20 +30,31 @@ class ParticleFilter:
         for p in self._particles:
             #sigmaT ~ .02
             dtheta = theta + np.random.normal(0,sigmaT)
-            dx = x + np.random.normal(0,sigmaD)
-            dy = y + np.random.normal(0,sigmaD)
-            close = self.map.closest_distance([p.x + dx, p.y + dy], (p.theta + dtheta) % (2 * np.pi))
-            while close is None == 0 or close == 0:
+            d = x + np.random.normal(0,sigmaD)
+            #dy = y + np.random.normal(0,sigmaD)
+            close = self.map.closest_distance([p.x + d*np.cos(p.theta), p.y + d*np.sin(p.theta)], (p.theta + dtheta) % (2 * np.pi))
+            closePre = self.map.closest_distance([p.x, p.y], (p.theta + dtheta) % (2 * np.pi))
+
+            print("close", close , "closePre" , closePre, "x", x, "y" , y)
+
+            if (close is None) or (close == 0) or closePre < d or close < d:
+                print("NONE OR CLOSE")
+                dtheta = 0
+                dx = 0
+                dy = 0
+                d = 0
+                """
                 dtheta = theta + np.random.normal(0,sigmaT)
                 dx = x + np.random.normal(0,sigmaD)
                 dy = y + np.random.normal(0,sigmaD)
                 close = self.map.closest_distance([p.x + dx, p.y + dy], (p.theta + dtheta) % (2 * np.pi))
+                """
             # Removed the multiplication by sin and cos since we already do that to get x and y.
             # Using sin and cos would need original velocity and would assume we're using those to update particle
             # location when we are using the robot's movement to move the particles
             p.theta = (p.theta + dtheta) % (2 * np.pi)
-            p.x = p.x + dx
-            p.y = p.y + dy
+            p.x = p.x + d*np.cos(p.theta)
+            p.y = p.y + d*np.sin(p.theta)
 
     def measure(self, sonar_reading, sigma):
         probs = []
