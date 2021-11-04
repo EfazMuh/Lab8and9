@@ -16,24 +16,11 @@ class Run:
         # Add the IP-address of your computer here if you run on the robot
         self.virtual_create = factory.create_virtual_create()
         self.map = lab8_map.Map("lab8_map.json")
-        self.particles = ParticleFilter(self.map,10)
+        self.particles = ParticleFilter(self.map,100)
 
     def run(self):
-        # This is an example on how to visualize the pose of our estimated position
-        # where our estimate is that the robot is at (x,y,z)=(0.5,0.5,0.1) with heading pi
-        self.virtual_create.set_pose((0.5, 0.5, 0.1), 0)
-
-        # This is an example on how to show particles
-        # the format is x,y,z,theta,x,y,z,theta,...
-        #data = [0.5, 0.5, 0.1, math.pi/2, 1.5, 1, 0.1, 0]
         data = []
 
-
-        # This is an example on how to estimate the distance to a wall for the given
-        # map, assuming the robot is at (0, 0) and has heading math.pi
-        print(self.map.closest_distance((0.5,0.5), 0))
-
-        # This is an example on how to detect that a button was pressed in V-REP
         while True:
 
             data = []
@@ -60,5 +47,7 @@ class Run:
                 data.append(p.theta)
 
             self.virtual_create.set_point_cloud(data)
+            est = self.particles.estimate()
+            self.virtual_create.set_pose((est.x, est.y, 0.1), est.theta)
 
             self.time.sleep(0.01)
